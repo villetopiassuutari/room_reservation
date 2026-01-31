@@ -9,7 +9,7 @@
 
 **Ajaminen ja testaaminen paikallisesti:**
 
-Lataa ensin arvittavat kirjastot komennolla
+Lataa ensin tarvittavat kirjastot komennolla
 
     pip install fastapi uvicorn
 
