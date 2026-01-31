@@ -86,5 +86,26 @@ VASTAUS 1
         raise HTTPException(status_code=404, detail="Booking not found")
 
 
+PROMPTI 2
 
+Kokeilin antamaasi ratkaisua, mutta sain tulosteeksi virheen "can't compare offset-naive and offset-aware datetimes". Korjaa datetime-osio toimivaksi.
+
+VASTAUS 2
+
+Nopein ja järkevin fix
+
+Tee aikavertailu timezone-aware-muodossa:
+
+    from datetime import datetime, timezone
+
+ja muuta vertailu:
+
+    if booking.start_time < datetime.now(timezone.utc):
+    raise HTTPException(status_code=400, detail="Booking cannot be in the past")
+
+Tämä toimii, koska:
+
+Pydantic käyttää ISO 8601 -aikoja
+
+ne ovat yleensä UTC-offsetilla varustettuja
 
