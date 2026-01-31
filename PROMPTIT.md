@@ -188,5 +188,100 @@ Korvaa endpointit näin:
         booking_service.delete_booking(booking_id)
         return {"message": "Booking deleted"}
 
-
 Endpointit ovat nyt ohuita ja luettavia.
+
+
+PROMPTI 4 
+
+Kiinnitä huomiota HTTPExceptioneihin ja virheilmoituksiin. Tee näistä selkeämpi ratkaisu ja ehdota samalla muita parannuskohteita koodissa.
+
+
+VASTAUS 4
+
+Validoinnin ja virheenkäsittelyn parantaminen:
+
+- siivotaan validointi Pydanticin vastuulle
+
+- erotetaan syötevirheet ja liiketoimintasääntöjen rikkomiset
+
+- parannetaan virheviestien selkeyttä (API-käyttäjän näkökulma)
+
+Nykyiset ongelmat:
+
+- Aikavalidointi on osittain service-luokassa
+
+- HTTPException-logiikkaa on vähän joka paikassa
+
+- BookingCreate ei validoi mitään itse
+
+
+**Lisää validointi BookingCreate-malliin**
+
+Muokkaa tätä kohtaa:
+
+    class BookingCreate(BaseModel):
+        room_id: str
+        start_time: datetime
+        end_time: datetime
+
+Korvaa tällä:
+
+    from pydantic import field_validator
+    
+    class BookingCreate(BaseModel):
+        room_id: str
+        start_time: datetime
+        end_time: datetime
+    
+        @field_validator("end_time")
+        @classmethod
+        def end_must_be_after_start(cls, end_time, info):
+            start_time = info.data.get("start_time")
+            if start_time and end_time <= start_time:
+                raise ValueError("end_time must be after start_time")
+            return end_time
+
+Nyt:
+
+- virheellinen aikaväli → 422 Unprocessable Entity
+
+- FastAPI hoitaa virhevastausen automaattisesti
+
+
+**Siivoa BookingService.create_booking**
+
+Poista tämä koknaan, sillä tämä ei ole enää servicetason vastuulla ja malli validoi tämä jo.
+
+    if booking.start_time >= booking.end_time:
+        raise HTTPException(status_code=400, detail="Start time must be before end time")
+
+
+**Selkeytä menneisyyden tarkistus**
+
+Pidetään tämä edelleen servicessä (liiketoimintasääntö):
+
+    if booking.start_time < now_utc():
+        raise HTTPException(
+            status_code=400,
+            detail="Booking start time cannot be in the past"
+        )
+(Tämä on hyvä – ei koske syötteen rakennetta vaan liiketoimintaa.)
+
+
+**Selkeämmät virheviestit päällekkäisyyksille**
+
+Pieni mutta ammattimainen parannus:
+
+    raise HTTPException(
+    status_code=409,
+    detail="Booking overlaps with an existing booking"
+)
+
+**Mitä parani?**
+
+API vastaa oikein HTTP-standardeja noudattaen
+
+Validointi on keskitetty
+
+Service-luokka on “puhtaampi”
+
