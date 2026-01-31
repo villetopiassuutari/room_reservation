@@ -109,3 +109,84 @@ Pydantic käyttää ISO 8601 -aikoja
 
 ne ovat yleensä UTC-offsetilla varustettuja
 
+
+
+
+PROMPTI 3
+
+Refaktoroi varauslogiikka omaksi luokaksi.
+
+
+VASTAUS 3 
+
+
+    class BookingService:
+        def __init__(self):
+            self.bookings: Dict[str, List[dict]] = {}
+    
+        def create_booking(self, booking: BookingCreate) -> dict:
+            if booking.start_time >= booking.end_time:
+                raise HTTPException(status_code=400, detail="Start time must be before end time")
+    
+            if booking.start_time < now_utc():
+                raise HTTPException(status_code=400, detail="Booking cannot be in the past")
+    
+            room_bookings = self.bookings.get(booking.room_id, [])
+    
+            for existing in room_bookings:
+                if not (
+                    booking.end_time <= existing["start_time"]
+                    or booking.start_time >= existing["end_time"]
+                ):
+                    raise HTTPException(status_code=400, detail="Booking overlaps with existing booking")
+    
+            new_booking = {
+                "id": str(uuid.uuid4()),
+                "room_id": booking.room_id,
+                "start_time": booking.start_time,
+                "end_time": booking.end_time,
+            }
+    
+            room_bookings.append(new_booking)
+            self.bookings[booking.room_id] = room_bookings
+            return new_booking
+    
+        def list_bookings(self, room_id: str) -> List[dict]:
+            return self.bookings.get(room_id, [])
+    
+        def delete_booking(self, booking_id: str) -> None:
+            for room_bookings in self.bookings.values():
+                for booking in room_bookings:
+                    if booking["id"] == booking_id:
+                        room_bookings.remove(booking)
+                        return
+            raise HTTPException(status_code=404, detail="Booking not found")
+
+Instanssi serviceä varten
+
+Ylös tiedostoon:
+
+    booking_service = BookingService()
+
+
+Siivoa endpointit
+
+Korvaa endpointit näin:
+
+    @app.post("/bookings", response_model=Booking)
+    def create_booking(booking: BookingCreate):
+        return booking_service.create_booking(booking)
+
+
+    @app.get("/rooms/{room_id}/bookings", response_model=List[Booking])
+    def list_bookings(room_id: str):
+        return booking_service.list_bookings(room_id)
+
+
+    @app.delete("/bookings/{booking_id}")
+    def delete_booking(booking_id: str):
+        booking_service.delete_booking(booking_id)
+        return {"message": "Booking deleted"}
+
+
+Endpointit ovat nyt ohuita ja luettavia.
