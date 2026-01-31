@@ -1,4 +1,4 @@
-PROMPTI 1
+**PROMPTI 1**
 
 Toteuta yksinkertainen kokoushuoneiden varaus-API Pythonilla FastAPIa käyttäen.
 
@@ -13,7 +13,7 @@ Tee ratkaisu mahdollisimman yksinkertaisena, jotta se on helppo ajaa lokaalisti.
 
 
 
-VASTAUS 1
+**VASTAUS 1**
 
     from fastapi import FastAPI, HTTPException
     from pydantic import BaseModel
@@ -86,11 +86,11 @@ VASTAUS 1
         raise HTTPException(status_code=404, detail="Booking not found")
 
 
-PROMPTI 2
+**PROMPTI 2**
 
 Kokeilin antamaasi ratkaisua, mutta sain tulosteeksi virheen "can't compare offset-naive and offset-aware datetimes". Korjaa datetime-osio toimivaksi.
 
-VASTAUS 2
+**VASTAUS 2**
 
 Nopein ja järkevin fix
 
@@ -112,12 +112,12 @@ ne ovat yleensä UTC-offsetilla varustettuja
 
 
 
-PROMPTI 3
+**PROMPTI 3**
 
 Refaktoroi varauslogiikka omaksi luokaksi.
 
 
-VASTAUS 3 
+**VASTAUS 3 **
 
 
     class BookingService:
@@ -191,12 +191,12 @@ Korvaa endpointit näin:
 Endpointit ovat nyt ohuita ja luettavia.
 
 
-PROMPTI 4 
+**PROMPTI 4** 
 
 Kiinnitä huomiota HTTPExceptioneihin ja virheilmoituksiin. Tee näistä selkeämpi ratkaisu ja ehdota samalla muita parannuskohteita koodissa.
 
 
-VASTAUS 4
+**VASTAUS 4**
 
 Validoinnin ja virheenkäsittelyn parantaminen:
 
