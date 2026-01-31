@@ -15,10 +15,21 @@ def now_utc() -> datetime:
 
 # ---------- Pydantic-mallit ----------
 
+from pydantic import field_validator
+
 class BookingCreate(BaseModel):
     room_id: str
     start_time: datetime
     end_time: datetime
+
+    @field_validator("end_time")
+    @classmethod
+    def end_must_be_after_start(cls, end_time, info):
+        start_time = info.data.get("start_time")
+        if start_time and end_time <= start_time:
+            raise ValueError("end_time must be after start_time")
+        return end_time
+
 
 
 class Booking(BaseModel):
@@ -36,11 +47,6 @@ class BookingService:
         self.bookings: Dict[str, List[Booking]] = {}
 
     def create_booking(self, booking: BookingCreate) -> Booking:
-        if booking.start_time >= booking.end_time:
-            raise HTTPException(
-                status_code=400,
-                detail="Start time must be before end time"
-            )
 
         if booking.start_time < now_utc():
             raise HTTPException(
@@ -56,7 +62,7 @@ class BookingService:
                 or booking.start_time >= existing.end_time
             ):
                 raise HTTPException(
-                    status_code=400,
+                    status_code=409,
                     detail="Booking overlaps with existing booking"
                 )
 
@@ -113,3 +119,4 @@ def delete_booking(booking_id: str):
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="127.0.0.1", port=8000)
+
